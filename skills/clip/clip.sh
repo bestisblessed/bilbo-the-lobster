@@ -40,7 +40,8 @@ yt-dlp --no-playlist -f "bv*+ba/b" --merge-output-format mp4 -o "$SRC" "$URL"
 [[ ! -f "$SRC" ]] && { echo "Download failed"; exit 1; }
 
 echo "Clipping..."
-ffmpeg -y -ss "$START" -to "$END" -i "$SRC" -c copy "$OUT"
+# ffmpeg -y -ss "$START" -to "$END" -i "$SRC" -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart "$OUT"
+ffmpeg -y -ss "$START" -to "$END" -i "$SRC" -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart "$OUT"
 
 rm -f "$SRC"
 echo "Done: $OUT"
