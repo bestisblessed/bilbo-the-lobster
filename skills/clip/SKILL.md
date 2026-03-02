@@ -6,7 +6,7 @@ metadata: {"openclaw": {"emoji": "✂️", "requires": {"bins": ["yt-dlp", "ffmp
 
 # clip
 
-Downloads highest quality video from YouTube, clips a time range, saves to ~/Desktop/Clips.
+Downloads given video URL from YouTube, clips any start and end time range, saves to folder on your Desktop ~/Desktop/Clips.
 
 ## Example
 
