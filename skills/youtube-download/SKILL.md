@@ -1,10 +1,10 @@
 ---
-name: youtube-download
+name: download
 description: Downloads YouTube videos to ~/Downloads. Use when user wants to download a YouTube video to their machine.
 metadata: {"openclaw": {"emoji": "⬇️", "requires": {"bins": ["yt-dlp"]}, "install": [{"id": "brew", "kind": "brew", "formula": "yt-dlp", "bins": ["yt-dlp"], "label": "Install yt-dlp (brew)"}], "user-invocable": true}}
 ---
 
-# youtube-download
+# Download
 
 Downloads YouTube videos to your ~/Downloads folder using yt-dlp.
 
@@ -17,7 +17,7 @@ Downloads YouTube videos to your ~/Downloads folder using yt-dlp.
 ## Usage
 
 ```bash
-{baseDir}/youtube-download.sh "https://youtube.com/watch?v=VIDEO_ID"
+{baseDir}/download.sh "https://youtube.com/watch?v=VIDEO_ID"
 ```
 
 Or just give me the URL and I'll run it for you.
