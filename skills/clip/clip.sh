@@ -23,11 +23,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -z "$URL" || -z "$START" || -z "$END" ]] && { usage; exit 2; }
+[[ "$START" =~ ^[0-9][0-9:.]*$ ]] || { echo "Invalid start time: $START"; exit 2; }
+[[ "$END" =~ ^[0-9][0-9:.]*$ ]] || { echo "Invalid end time: $END"; exit 2; }
 command -v yt-dlp >/dev/null || { echo "yt-dlp not found"; exit 1; }
 command -v ffmpeg >/dev/null || { echo "ffmpeg not found"; exit 1; }
 
 if [[ -z "$NAME" ]]; then
-  NAME=$(yt-dlp --get-title "$URL" 2>/dev/null | sed 's/[^a-zA-Z0-9 _-]/_/g; s/  */_/g; s/^_\|_$//g' | head -c 64)
+  NAME=$(yt-dlp --get-title -- "$URL" 2>/dev/null | sed 's/[^a-zA-Z0-9 _-]/_/g; s/  */_/g; s/^_\|_$//g' | head -c 64)
   [[ -z "$NAME" ]] && NAME="clip"
 fi
 
@@ -36,7 +38,7 @@ OUT="$OUT_DIR/${NAME}.mp4"
 rm -f "$SRC"
 
 echo "Downloading..."
-yt-dlp --no-playlist -f "bv*+ba/b" --merge-output-format mp4 -o "$SRC" "$URL"
+yt-dlp --no-playlist -f "bv*+ba/b" --merge-output-format mp4 -o "$SRC" -- "$URL"
 [[ ! -f "$SRC" ]] && { echo "Download failed"; exit 1; }
 
 echo "Clipping..."
