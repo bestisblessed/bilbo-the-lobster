@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import sys
 from pathlib import Path
 
-session_id = sys.argv[1]
+# session_id = sys.argv[1]
+session_id = sys.argv[1] if len(sys.argv) > 1 else os.environ["CODEX_THREAD_ID"]
 matches = sorted(Path("~/.codex/sessions").expanduser().glob(f"*/*/*/*{session_id}*"))
 
 if not matches:

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Export Conversation"
+  display_name: "Export"
   short_description: "Export a Codex session to Markdown"
   default_prompt: "Export a Codex conversation by session id."
