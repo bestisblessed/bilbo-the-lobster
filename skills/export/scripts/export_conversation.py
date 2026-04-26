@@ -5,7 +5,6 @@ import os
 import sys
 from pathlib import Path
 
-# session_id = sys.argv[1]
 session_id = sys.argv[1] if len(sys.argv) > 1 else os.environ["CODEX_THREAD_ID"]
 matches = sorted(Path("~/.codex/sessions").expanduser().glob(f"*/*/*/*{session_id}*"))
 
@@ -27,5 +26,6 @@ for match in matches:
             lines.append(block)
             seen.add(block)
     out = Path(f"~/Documents/Exports/{match.stem[28:]}.md").expanduser()
+    out.unlink(missing_ok=True)
     out.write_text("\n---\n\n".join(lines).strip() + "\n")
     print(out)
