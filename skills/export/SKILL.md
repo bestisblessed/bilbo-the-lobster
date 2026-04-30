@@ -19,6 +19,18 @@ The script reads from `~/.codex/sessions` and writes:
 
 `~/Documents/Exports/<session-id>.md`
 
+The script creates `~/Documents/Exports` when needed.
+
 Print the saved path after running it.
 
-**Make sure `~/Documents/Exports` already exists before running the script.**
+## Local Scope
+
+This skill only reads local Codex session JSONL files under:
+
+`~/.codex/sessions`
+
+This skill only writes Markdown exports under:
+
+`~/Documents/Exports`
+
+It makes no network calls, reads no credentials, installs no packages, and downloads no external files.
