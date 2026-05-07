@@ -31,10 +31,15 @@ command -v ffmpeg >/dev/null || { echo "ffmpeg not found"; exit 1; }
 if [[ -z "$NAME" ]]; then
   NAME=$(yt-dlp --get-title -- "$URL" 2>/dev/null | sed 's/[^a-zA-Z0-9 _-]/_/g; s/  */_/g; s/^_\|_$//g' | head -c 64)
   [[ -z "$NAME" ]] && NAME="clip"
+else
+  NAME=$(printf '%s' "$NAME" | sed 's/[^a-zA-Z0-9 _-]/_/g; s/  */_/g; s/^_\|_$//g' | head -c 64)
+  [[ -z "$NAME" ]] && { echo "Invalid clip name"; exit 2; }
 fi
 
 SRC="$WORK_DIR/${NAME}_source.mp4"
 OUT="$OUT_DIR/${NAME}.mp4"
+REAL_OUT="$(cd "$OUT_DIR" && realpath -m "$OUT")"
+[[ "$REAL_OUT" == "$OUT_DIR/"* ]] || { echo "Invalid clip name: escapes output directory"; exit 2; }
 rm -f "$SRC"
 
 echo "Downloading..."
