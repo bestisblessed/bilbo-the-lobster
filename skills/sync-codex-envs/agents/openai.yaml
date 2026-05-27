@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Codex Envs"
+  short_description: "Sync Codex environment TOML files"
+  default_prompt: "Use $sync-codex-envs to sync Codex environment.toml files between this Mac and another SSH-accessible machine."
