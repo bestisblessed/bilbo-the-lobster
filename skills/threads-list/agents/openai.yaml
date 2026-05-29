@@ -1,0 +1,4 @@
+interface:
+  display_name: "Threads List"
+  short_description: "List Codex threads for the current project"
+  default_prompt: "Use $threads-list to list Codex thread names and session ids for the current project."
