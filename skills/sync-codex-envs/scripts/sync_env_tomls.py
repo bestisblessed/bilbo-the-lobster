@@ -16,8 +16,8 @@ from pathlib import Path
 
 ENV_REL = Path(".codex/environments/environment.toml")
 DEFAULT_LOCAL_CODE_ROOT = Path("~/Code").expanduser()
-DEFAULT_REMOTE = ""
-DEFAULT_REMOTE_CODE_ROOT = "Code"
+DEFAULT_REMOTE = "pablo@DonPabloMBP.local"
+DEFAULT_REMOTE_CODE_ROOT = "/Users/pablo/Code"
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,8 +25,8 @@ def parse_args() -> argparse.Namespace:
         description="Sync .codex/environments/environment.toml files between this Mac and an SSH target."
     )
     parser.add_argument("--direction", choices=("send", "receive"), help="send local files to remote, or receive remote files")
-    parser.add_argument("--remote", help="SSH target, for example user@host.local")
-    parser.add_argument("--remote-code-root", default=DEFAULT_REMOTE_CODE_ROOT, help=f"Remote Code directory, default {DEFAULT_REMOTE_CODE_ROOT} relative to the SSH user's home")
+    parser.add_argument("--remote", help=f"SSH target, default {DEFAULT_REMOTE}")
+    parser.add_argument("--remote-code-root", default=DEFAULT_REMOTE_CODE_ROOT, help=f"Remote Code directory, default {DEFAULT_REMOTE_CODE_ROOT}")
     parser.add_argument("--local-code-root", type=Path, default=DEFAULT_LOCAL_CODE_ROOT, help=f"Local Code directory, default {DEFAULT_LOCAL_CODE_ROOT}")
     parser.add_argument("--repo", action="append", help="Repo name/path to sync. Repeat, comma-separate, or use 'all'.")
     parser.add_argument("--send-repo", action="append", help="Repo to send from this Mac to remote. Repeat or comma-separate.")
@@ -78,10 +78,8 @@ def prompt_direction(direction: str | None) -> str:
 def prompt_remote(remote: str | None) -> str:
     if remote:
         return remote
-    answer = input("Remote SSH target: ").strip()
-    if not answer:
-        raise SystemExit("Remote SSH target is required.")
-    return answer
+    answer = input(f"Remote SSH target [{DEFAULT_REMOTE}]: ").strip()
+    return answer or DEFAULT_REMOTE
 
 
 def prompt_repos(repos: list[str], discovered: list[str]) -> list[str]:

@@ -1,6 +1,6 @@
 ---
 name: sync-codex-envs
-description: Sync Codex `.codex/environments/environment.toml` files between local repo checkouts and another Mac or server over SSH. Use when the user wants to send, receive, copy, compare, refresh, or keep Codex Environment TOML configs in sync across machines.
+description: Sync Codex `.codex/environments/environment.toml` files plus global Codex config files such as `~/.codex/AGENTS.md` and `~/.codex/keybindings.json` between local repo checkouts and another Mac or server over SSH. Use when the user wants to send, receive, copy, compare, refresh, or keep Codex Environment TOML configs, Codex instructions, or keyboard shortcuts in sync across machines such as this M4 Mac and DonPablo.
 ---
 
 # Sync Codex Envs
@@ -11,54 +11,81 @@ Use this skill to synchronize repo-local Codex environment files:
 <repo>/.codex/environments/environment.toml
 ```
 
+Also use this skill for these global Codex config files:
+
+```text
+~/.codex/AGENTS.md
+~/.codex/keybindings.json
+```
+
 ## Workflow
 
 1. Determine the direction for each repo:
    - `send`: copy local TOMLs to the remote machine.
    - `receive`: copy remote TOMLs to this machine.
-2. Determine the remote SSH target. Ask for it when the user does not provide one.
+2. Determine the remote SSH target. Default to `pablo@DonPabloMBP.local` when the user says DonPablo and gives no other host.
 3. Determine repo names. If missing, ask which local repos to sync after discovering repos under `~/Code`.
-4. Run `scripts/sync_env_tomls.py` with the chosen direction, remote, and repos. Use `--send-repo` and `--receive-repo` when one run needs mixed directions.
-5. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path.
+4. For repo environment TOMLs, run `scripts/sync_env_tomls.py` with the chosen direction, remote, and repos. Use `--send-repo` and `--receive-repo` when one run needs mixed directions.
+5. For global config files, use direct `ssh` and `scp` commands with a timestamped backup first.
+6. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path; direct global config sync should list and print the copied remote file.
 
 ## Script
 
 Prefer the bundled helper because it handles discovery, prompting, backups, SCP, and TOML validation:
 
 ```bash
-python ~/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py
 ```
 
 Common non-interactive forms:
 
 ```bash
-python ~/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote user@host.local --repo example-app --repo example-api
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote pablo@DonPabloMBP.local --repo mma-ai-swift-app --repo odds-monitoring
 ```
 
 ```bash
-python ~/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction receive --remote user@host.local --repo example-app --repo example-api
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction receive --remote pablo@DonPabloMBP.local --repo mma-ai-swift-app --repo odds-monitoring
 ```
 
 Mixed directions in one run:
 
 ```bash
-python ~/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --remote user@host.local --send-repo example-app --send-repo example-api --receive-repo example-model
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --remote pablo@DonPabloMBP.local --send-repo mma-ai-swift-app --send-repo the-fight-predictor-agent --receive-repo mma-ai
 ```
 
 Use `--dry-run` before live copies when checking paths:
 
 ```bash
-python ~/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote user@host.local --repo all --dry-run
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote pablo@DonPabloMBP.local --repo all --dry-run
 ```
+
+## Global Config Files
+
+For shell-only global config syncs, default to these commands when sending local config to DonPablo. Do not create `~/.codex` unless the user asks; this workflow assumes Codex already exists on the remote.
+
+```bash
+ssh pablo@DonPabloMBP.local 'if [ -f ~/.codex/AGENTS.md ]; then cp ~/.codex/AGENTS.md ~/.codex/AGENTS.md.bak-$(date +%Y%m%d-%H%M%S); fi'
+scp ~/.codex/AGENTS.md pablo@DonPabloMBP.local:~/.codex/AGENTS.md
+ssh pablo@DonPabloMBP.local 'ls -l ~/.codex/AGENTS.md && sed -n "1,220p" ~/.codex/AGENTS.md'
+```
+
+```bash
+ssh pablo@DonPabloMBP.local 'if [ -f ~/.codex/keybindings.json ]; then cp ~/.codex/keybindings.json ~/.codex/keybindings.json.bak-$(date +%Y%m%d-%H%M%S); fi'
+scp ~/.codex/keybindings.json pablo@DonPabloMBP.local:~/.codex/keybindings.json
+ssh pablo@DonPabloMBP.local 'ls -l ~/.codex/keybindings.json && sed -n "1,220p" ~/.codex/keybindings.json'
+```
+
+For receive direction, reverse the `scp` source and destination and back up the local destination before overwriting.
 
 ## Defaults
 
 - Local code root: `~/Code`
-- Remote code root: `Code` relative to the SSH user's home
-- Remote target: required as `--remote` or prompted interactively
-- Destination backups: `environment.toml.bak-YYYYmmdd-HHMMSS`
+- Remote code root: `/Users/pablo/Code`
+- Remote target for DonPablo: `pablo@DonPabloMBP.local`
+- Environment destination backups: `environment.toml.bak-YYYYmmdd-HHMMSS`
+- Global config destination backups: `<filename>.bak-YYYYmmdd-HHMMSS`
 
 ## Notes
 
-- Do not sync `.env` secrets with this skill; it is only for Codex Environment TOML files.
-- If the user asks for shell-only commands instead of using the helper, give explicit `scp` commands for each repo and include a backup command first.
+- Do not sync `.env` secrets with this skill; sync only Codex Environment TOML files and the explicit global Codex config files above.
+- If the user asks for shell-only commands instead of using the helper, give explicit `scp` commands for each repo or global config file and include a backup command first.
