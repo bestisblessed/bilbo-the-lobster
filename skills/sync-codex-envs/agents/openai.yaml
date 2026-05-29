@@ -1,4 +1,4 @@
 interface:
   display_name: "Sync Codex Envs"
   short_description: "Sync Codex envs, instructions, and shortcuts"
-  default_prompt: "Use $sync-codex-envs to sync Codex environment.toml files, AGENTS.md, or keybindings.json between this Mac and DonPablo."
+  default_prompt: "Use $sync-codex-envs to run the read-only diff for Codex environment.toml files, AGENTS.md, and keybindings.json between this Mac and DonPablo, print the output, then ask how to proceed."

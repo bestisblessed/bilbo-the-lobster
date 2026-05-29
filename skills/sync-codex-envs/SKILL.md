@@ -20,6 +20,11 @@ Also use this skill for these global Codex config files:
 
 ## Workflow
 
+0. Default action: before any sync, run the read-only diff helper and print its full output:
+   ```bash
+   /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
+   ```
+   Then ask the user how they want to proceed. Do not send or receive files until the user chooses a direction and scope.
 1. Determine the direction for each repo:
    - `send`: copy local TOMLs to the remote machine.
    - `receive`: copy remote TOMLs to this machine.
@@ -30,6 +35,20 @@ Also use this skill for these global Codex config files:
 6. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path; direct global config sync should list and print the copied remote file.
 
 ## Script
+
+Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Codex`, plus `~/.codex/AGENTS.md` and `~/.codex/keybindings.json` on both machines:
+
+```bash
+/Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
+```
+
+Optional target override:
+
+```bash
+/Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh pablo@DonPabloMBP.local
+```
+
+After printing the diff, ask the user what to sync, if anything.
 
 Prefer the bundled helper because it handles discovery, prompting, backups, SCP, and TOML validation:
 
