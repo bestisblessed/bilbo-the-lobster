@@ -24,7 +24,7 @@ Also use this skill for these global Codex config files:
    ```bash
    /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
    ```
-   Then ask the user how they want to proceed. Do not send or receive files until the user chooses a direction and scope.
+   This includes repo environment TOMLs, global Codex config files, installed plugin config entries, and user-installed skills. Then ask the user how they want to proceed. Do not send or receive files until the user chooses a direction and scope.
 1. Determine the direction for each repo:
    - `send`: copy local TOMLs to the remote machine.
    - `receive`: copy remote TOMLs to this machine.
@@ -36,7 +36,7 @@ Also use this skill for these global Codex config files:
 
 ## Script
 
-Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Codex`, plus `~/.codex/AGENTS.md` and `~/.codex/keybindings.json` on both machines:
+Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Codex`, `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, installed plugin config entries, and user-installed skills on both machines:
 
 ```bash
 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
@@ -49,6 +49,14 @@ Optional target override:
 ```
 
 After printing the diff, ask the user what to sync, if anything.
+
+To compare only installed plugins and user skills without checking environment TOMLs or global config files, run:
+
+```bash
+python3 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_plugins_skills.py pablo@DonPabloMBP.local
+```
+
+This is read-only. It prints plugin entries from `~/.codex/config.toml` and user skill directories from `~/.codex/skills` and `~/.agents/skills`, excluding Codex-managed `~/.codex/skills/.system`.
 
 Prefer the bundled helper because it handles discovery, prompting, backups, SCP, and TOML validation:
 

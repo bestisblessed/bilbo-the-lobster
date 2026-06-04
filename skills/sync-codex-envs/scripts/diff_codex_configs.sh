@@ -13,10 +13,8 @@ trap 'rm -rf "$tmp_dir"' EXIT
 
 local_repos="$tmp_dir/local-repos.txt"
 remote_repos="$tmp_dir/remote-repos.txt"
-remote_codex_envs="$tmp_dir/remote-codex-envs.txt"
 all_repos="$tmp_dir/all-repos.txt"
 remote_home="$(ssh -n "$remote" 'printf %s "$HOME"')"
-remote_codex_root="${REMOTE_CODEX_ROOT:-$remote_home/Documents/Codex}"
 
 find "$local_code_root" -maxdepth 4 -path "*/$env_rel" -print \
   | sed "s#^$local_code_root/##; s#/$env_rel\$##" \
@@ -25,9 +23,6 @@ find "$local_code_root" -maxdepth 4 -path "*/$env_rel" -print \
 ssh -n "$remote" "find '$remote_code_root' -maxdepth 4 -path '*/$env_rel' -print" \
   | sed "s#^$remote_code_root/##; s#/$env_rel\$##" \
   | sort > "$remote_repos"
-
-ssh -n "$remote" "if [ -d '$remote_codex_root' ]; then find '$remote_codex_root' -maxdepth 8 -path '*/$env_rel' -print | sort; fi" \
-  > "$remote_codex_envs"
 
 sort -u "$local_repos" "$remote_repos" > "$all_repos"
 
@@ -79,18 +74,6 @@ while IFS= read -r repo; do
     "$remote_code_root/$repo/$env_rel"
 done < "$all_repos"
 
-printf '\nChecking remote Codex workspace environment files under %s\n\n' "$remote_codex_root"
-
-if [[ ! -s "$remote_codex_envs" ]]; then
-  printf '[none] no remote Codex workspace environment.toml files found\n'
-else
-  while IFS= read -r remote_path; do
-    [[ -n "$remote_path" ]] || continue
-    printf '[only-remote-codex] %s\n' "${remote_path#"$remote_codex_root"/}"
-    printf '  remote: %s:%s\n\n' "$remote" "$remote_path"
-  done < "$remote_codex_envs"
-fi
-
 printf '\nComparing global Codex config files\n\n'
 
 for file in "${global_files[@]}"; do
@@ -99,3 +82,7 @@ for file in "${global_files[@]}"; do
     "$HOME/.codex/$file" \
     "$remote_home/.codex/$file"
 done
+
+printf '\nComparing installed plugins and user skills\n\n'
+
+python3 "$(dirname "$0")/diff_plugins_skills.py" "$remote"
