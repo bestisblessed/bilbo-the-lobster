@@ -1,6 +1,6 @@
 ---
 name: sync-codex-envs
-description: Sync Codex `.codex/environments/environment.toml` files plus global Codex config files such as `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, and plugin entries in `~/.codex/config.toml` between local repo checkouts and another Mac or server over SSH. Use when the user wants to send, receive, copy, compare, refresh, or keep Codex Environment TOML configs, Codex instructions, keyboard shortcuts, plugin install/status entries, or user skills in sync across machines such as this M4 Mac and DonPablo.
+description: Sync Codex `.codex/environments/environment.toml` files plus global Codex config files such as `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, and plugin or MCP entries in `~/.codex/config.toml` between local repo checkouts and another Mac or server over SSH. Use when the user wants to send, receive, copy, compare, refresh, or keep Codex Environment TOML configs, Codex instructions, keyboard shortcuts, plugin install/status entries, MCP server entries, or user skills in sync across machines such as this M4 Mac and DonPablo.
 ---
 
 # Sync Codex Envs
@@ -16,7 +16,7 @@ Also use this skill for these global Codex config files and user extension direc
 ```text
 ~/.codex/AGENTS.md
 ~/.codex/keybindings.json
-~/.codex/config.toml                 # plugin entries under [plugins."name@marketplace"]
+~/.codex/config.toml                 # plugin entries and MCP entries
 ~/.codex/skills/<skill-name>          # user-installed Codex skills, excluding .system
 ~/.agents/skills/<skill-name>         # legacy user-installed skills
 ```
@@ -27,7 +27,7 @@ Also use this skill for these global Codex config files and user extension direc
    ```bash
    /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
    ```
-   This includes repo environment TOMLs, global Codex config files, installed plugin config entries, and user-installed skills. Then ask the user how they want to proceed. Do not send or receive files until the user chooses a direction and scope.
+   This includes repo environment TOMLs, global Codex config files, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills. Then ask the user how they want to proceed. Do not send or receive files until the user chooses a direction and scope.
 1. Determine the direction for each repo:
    - `send`: copy local TOMLs to the remote machine.
    - `receive`: copy remote TOMLs to this machine.
@@ -39,12 +39,17 @@ Also use this skill for these global Codex config files and user extension direc
    - `[only-local]` or `[only-remote]` plugin install differences can be aligned with `codex plugin add` or `codex plugin remove` when the CLI is available on the target host.
    - `[different-status]` plugin differences are `enabled = true` / `enabled = false` values under the matching `[plugins."name@marketplace"]` table in `~/.codex/config.toml`. If `codex plugin --help` does not show a plugin enable/disable command, edit those TOML booleans directly after backing up the destination config.
    - On remote hosts, first check CLI availability with `ssh <remote> 'zsh -lc "command -v codex && codex plugin --help"'`; non-login SSH shells may not have `codex` on `PATH`. If unavailable, edit `~/.codex/config.toml` directly and validate TOML afterward.
-7. For user skill differences, copy only user-approved skill directories under `~/.codex/skills` or `~/.agents/skills`; never copy managed `~/.codex/skills/.system`.
-8. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path; direct global config sync should list and print the copied remote file. Plugin config edits must be validated as TOML on both sides and then verified by rerunning the read-only diff helper.
+7. For MCP differences, manage only the MCP entries the user names:
+   - Standalone MCP servers live under `[mcp_servers.<name>]` in `~/.codex/config.toml`.
+   - Plugin MCP overrides live under nested plugin tables such as `[plugins."name@marketplace".mcp_servers.<server>...]`.
+   - Use `codex mcp add`, `codex mcp remove`, `codex mcp list`, and `codex mcp get` when available. If CLI commands are unavailable over SSH, edit only the requested TOML table(s) after backing up the destination config.
+   - Treat MCP `env`, `http_headers`, bearer token env vars, API keys, and machine-specific paths as sensitive or host-specific. The diff helper intentionally checks MCP presence only and does not compare or print config fingerprints for same-name MCPs.
+8. For user skill differences, copy only user-approved skill directories under `~/.codex/skills` or `~/.agents/skills`; never copy managed `~/.codex/skills/.system`.
+9. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path; direct global config sync should list and print the copied remote file. Plugin and MCP config edits must be validated as TOML on both sides and then verified by rerunning the read-only diff helper.
 
 ## Script
 
-Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Codex`, `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, installed plugin config entries, and user-installed skills on both machines:
+Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Codex`, `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills on both machines:
 
 ```bash
 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
@@ -58,16 +63,16 @@ Optional target override:
 
 After printing the diff, ask the user what to sync, if anything.
 
-To compare only installed plugins and user skills without checking environment TOMLs or global config files, run:
+To compare only installed plugins, MCP entries, and user skills without checking environment TOMLs or global config files, run:
 
 ```bash
 python3 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_plugins_skills.py pablo@DonPabloMBP.local
 ```
 
-This is read-only. It prints plugin entries from `~/.codex/config.toml` and user skill directories from `~/.codex/skills` and `~/.agents/skills`, excluding Codex-managed `~/.codex/skills/.system`.
+This is read-only. It prints plugin entries, standalone MCP server presence, plugin MCP override presence from `~/.codex/config.toml`, and user skill directories from `~/.codex/skills` and `~/.agents/skills`, excluding Codex-managed `~/.codex/skills/.system`. MCP entries are presence-only: when the same MCP name exists on both machines, the helper does not report config or version differences.
 
 
-## Plugin And Skill Sync
+## Plugin, MCP, And Skill Sync
 
 Plugin state is tracked in `~/.codex/config.toml` under tables like:
 
@@ -120,6 +125,44 @@ scp -r ~/.codex/skills/sync-codex-envs pablo@DonPabloMBP.local:~/.codex/skills/
 ```
 
 Back up an existing destination skill directory before overwriting it. Do not copy `~/.codex/skills/.system`.
+
+## MCP Sync
+
+Standalone MCP server state is tracked in `~/.codex/config.toml` under tables like:
+
+```toml
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+
+[mcp_servers.context7.http_headers]
+CONTEXT7_API_KEY = "..."
+```
+
+Plugin-specific MCP overrides can also appear under plugin tables:
+
+```toml
+[plugins."build-ios-apps@openai-curated".mcp_servers.xcodebuildmcp.tools.clean]
+approval_mode = "approve"
+```
+
+Use `codex mcp` commands when the CLI is available:
+
+```bash
+codex mcp list
+codex mcp get context7
+codex mcp add context7 --url https://mcp.context7.com/mcp
+codex mcp remove context7
+```
+
+For stdio servers, include the command after `--`; for HTTP servers, use `--url`. Add environment variables with `--env KEY=VALUE` only when the value is safe to copy to that host.
+
+Remote MCP status pattern:
+
+```bash
+ssh pablo@DonPabloMBP.local 'zsh -lc "command -v codex && codex mcp list"'
+```
+
+If `codex mcp` is unavailable over SSH, back up `~/.codex/config.toml`, edit only the requested `[mcp_servers.<name>]` or plugin MCP override table, validate TOML, and rerun the read-only diff helper. The helper intentionally reports only `[only-local]` and `[only-remote]` MCP entries; it does not report `[different-config]` for same-name MCPs because paths, app versions, tokens, and runtime locations can legitimately differ by host. Do not print or copy MCP secrets unless the user explicitly asks to sync that named secret-bearing entry.
 
 Prefer the bundled helper because it handles discovery, prompting, backups, SCP, and TOML validation:
 

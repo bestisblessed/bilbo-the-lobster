@@ -83,6 +83,6 @@ for file in "${global_files[@]}"; do
     "$remote_home/.codex/$file"
 done
 
-printf '\nComparing installed plugins and user skills\n\n'
+printf '\nComparing installed plugins, MCPs, and user skills\n\n'
 
 python3 "$(dirname "$0")/diff_plugins_skills.py" "$remote"

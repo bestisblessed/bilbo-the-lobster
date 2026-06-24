@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print read-only differences in installed Codex plugins and user skills."""
+"""Print read-only differences in installed Codex plugins, MCPs, and user skills."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ DEFAULT_REMOTE = "pablo@DonPabloMBP.local"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Compare installed Codex plugins and user skills with an SSH target."
+        description="Compare installed Codex plugins, MCPs, and user skills with an SSH target."
     )
     parser.add_argument("remote", nargs="?", default=DEFAULT_REMOTE, help=f"SSH target, default {DEFAULT_REMOTE}")
     return parser.parse_args()
@@ -35,6 +35,33 @@ def parse_plugins(config_text: str) -> dict[str, str]:
         if isinstance(config, dict):
             enabled = config.get("enabled")
             result[name] = "enabled" if enabled is True else "disabled"
+    return result
+
+
+def parse_standalone_mcps(config_text: str) -> dict[str, str]:
+    if not config_text.strip():
+        return {}
+    data = tomllib.loads(config_text)
+    servers = data.get("mcp_servers", {})
+    result: dict[str, str] = {}
+    for name, config in servers.items():
+        if isinstance(config, dict):
+            result[name] = "present"
+    return result
+
+
+def parse_plugin_mcp_overrides(config_text: str) -> dict[str, str]:
+    if not config_text.strip():
+        return {}
+    data = tomllib.loads(config_text)
+    plugins = data.get("plugins", {})
+    result: dict[str, str] = {}
+    for plugin_name, config in plugins.items():
+        if not isinstance(config, dict):
+            continue
+        mcp_servers = config.get("mcp_servers")
+        if isinstance(mcp_servers, dict) and mcp_servers:
+            result[plugin_name] = "present"
     return result
 
 
@@ -127,18 +154,52 @@ def print_plugin_diff(local_plugins: dict[str, str], remote_plugins: dict[str, s
     print()
 
 
+def print_mcp_presence_diff(title: str, local_items: dict[str, str], remote_items: dict[str, str]) -> None:
+    print(title)
+    local_names = set(local_items)
+    remote_names = set(remote_items)
+    only_local = sorted(local_names - remote_names)
+    only_remote = sorted(remote_names - local_names)
+
+    if not only_local and not only_remote:
+        print("[same] no install differences")
+        print()
+        return
+
+    for name in only_local:
+        print(f"[only-local] {name}")
+    for name in only_remote:
+        print(f"[only-remote] {name}")
+    print()
+
+
 def main() -> int:
     args = parse_args()
     remote_home = run_remote(args.remote, 'printf %s "$HOME"')
 
-    print(f"Comparing installed Codex plugins and skills")
+    print(f"Comparing installed Codex plugins, MCPs, and skills")
     print(f"Local:  {Path.home()}")
     print(f"Remote: {args.remote}:{remote_home}")
     print()
 
-    local_plugins = parse_plugins(local_config_text())
-    remote_plugins = parse_plugins(remote_config_text(args.remote))
+    local_config = local_config_text()
+    remote_config = remote_config_text(args.remote)
+
+    local_plugins = parse_plugins(local_config)
+    remote_plugins = parse_plugins(remote_config)
     print_plugin_diff(local_plugins, remote_plugins)
+
+    print_mcp_presence_diff(
+        "Standalone MCP servers from ~/.codex/config.toml",
+        parse_standalone_mcps(local_config),
+        parse_standalone_mcps(remote_config),
+    )
+
+    print_mcp_presence_diff(
+        "Plugin MCP overrides from ~/.codex/config.toml",
+        parse_plugin_mcp_overrides(local_config),
+        parse_plugin_mcp_overrides(remote_config),
+    )
 
     print_set_diff("User skills", local_skills(), remote_skills(args.remote))
     return 0
