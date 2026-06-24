@@ -1,6 +1,6 @@
 ---
 name: sync-codex-envs
-description: Sync Codex `.codex/environments/environment.toml` files plus global Codex config files such as `~/.codex/AGENTS.md` and `~/.codex/keybindings.json` between local repo checkouts and another Mac or server over SSH. Use when the user wants to send, receive, copy, compare, refresh, or keep Codex Environment TOML configs, Codex instructions, or keyboard shortcuts in sync across machines such as this M4 Mac and DonPablo.
+description: Sync Codex `.codex/environments/environment.toml` files plus global Codex config files such as `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, and plugin entries in `~/.codex/config.toml` between local repo checkouts and another Mac or server over SSH. Use when the user wants to send, receive, copy, compare, refresh, or keep Codex Environment TOML configs, Codex instructions, keyboard shortcuts, plugin install/status entries, or user skills in sync across machines such as this M4 Mac and DonPablo.
 ---
 
 # Sync Codex Envs
@@ -11,11 +11,14 @@ Use this skill to synchronize repo-local Codex environment files:
 <repo>/.codex/environments/environment.toml
 ```
 
-Also use this skill for these global Codex config files:
+Also use this skill for these global Codex config files and user extension directories:
 
 ```text
 ~/.codex/AGENTS.md
 ~/.codex/keybindings.json
+~/.codex/config.toml                 # plugin entries under [plugins."name@marketplace"]
+~/.codex/skills/<skill-name>          # user-installed Codex skills, excluding .system
+~/.agents/skills/<skill-name>         # legacy user-installed skills
 ```
 
 ## Workflow
@@ -32,7 +35,12 @@ Also use this skill for these global Codex config files:
 3. Determine repo names. If missing, ask which local repos to sync after discovering repos under `~/Code`.
 4. For repo environment TOMLs, run `scripts/sync_env_tomls.py` with the chosen direction, remote, and repos. Use `--send-repo` and `--receive-repo` when one run needs mixed directions.
 5. For global config files, use direct `ssh` and `scp` commands with a timestamped backup first.
-6. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path; direct global config sync should list and print the copied remote file.
+6. For plugin differences, manage only the plugin entries the user names:
+   - `[only-local]` or `[only-remote]` plugin install differences can be aligned with `codex plugin add` or `codex plugin remove` when the CLI is available on the target host.
+   - `[different-status]` plugin differences are `enabled = true` / `enabled = false` values under the matching `[plugins."name@marketplace"]` table in `~/.codex/config.toml`. If `codex plugin --help` does not show a plugin enable/disable command, edit those TOML booleans directly after backing up the destination config.
+   - On remote hosts, first check CLI availability with `ssh <remote> 'zsh -lc "command -v codex && codex plugin --help"'`; non-login SSH shells may not have `codex` on `PATH`. If unavailable, edit `~/.codex/config.toml` directly and validate TOML afterward.
+7. For user skill differences, copy only user-approved skill directories under `~/.codex/skills` or `~/.agents/skills`; never copy managed `~/.codex/skills/.system`.
+8. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path; direct global config sync should list and print the copied remote file. Plugin config edits must be validated as TOML on both sides and then verified by rerunning the read-only diff helper.
 
 ## Script
 
@@ -57,6 +65,61 @@ python3 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_plugins_skills.py p
 ```
 
 This is read-only. It prints plugin entries from `~/.codex/config.toml` and user skill directories from `~/.codex/skills` and `~/.agents/skills`, excluding Codex-managed `~/.codex/skills/.system`.
+
+
+## Plugin And Skill Sync
+
+Plugin state is tracked in `~/.codex/config.toml` under tables like:
+
+```toml
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+```
+
+Use `codex plugin add` and `codex plugin remove` when adding or removing plugin install entries and the CLI is available:
+
+```bash
+codex plugin add spreadsheets@openai-primary-runtime
+codex plugin remove latex@openai-bundled
+```
+
+The current CLI exposes `plugin add`, `plugin list`, `plugin marketplace`, and `plugin remove`. If `codex plugin --help` still does not show plugin-specific enable/disable commands, sync `[different-status]` entries by backing up `~/.codex/config.toml`, changing only the requested plugin table's `enabled` boolean, validating TOML, and rerunning the read-only diff helper.
+
+Local plugin status edit pattern:
+
+```bash
+cp ~/.codex/config.toml ~/.codex/config.toml.bak-$(date +%Y%m%d-%H%M%S)
+python3 - <<'PY'
+from pathlib import Path
+import tomllib
+
+path = Path.home() / ".codex" / "config.toml"
+text = path.read_text()
+# Edit only the requested [plugins."name@marketplace"] table(s), then validate:
+tomllib.loads(text)
+PY
+```
+
+Remote plugin status edit pattern:
+
+```bash
+ssh pablo@DonPabloMBP.local 'cp ~/.codex/config.toml ~/.codex/config.toml.bak-$(date +%Y%m%d-%H%M%S)'
+ssh pablo@DonPabloMBP.local 'zsh -lc "command -v codex && codex plugin --help"'
+```
+
+If the remote `codex` command is unavailable in SSH, patch `~/.codex/config.toml` directly on the remote, copy it back or print it, validate it with local `python3`/`tomllib` when needed, and rerun:
+
+```bash
+/Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh pablo@DonPabloMBP.local
+```
+
+For user skills, sync only explicit user-approved directories:
+
+```bash
+scp -r ~/.codex/skills/sync-codex-envs pablo@DonPabloMBP.local:~/.codex/skills/
+```
+
+Back up an existing destination skill directory before overwriting it. Do not copy `~/.codex/skills/.system`.
 
 Prefer the bundled helper because it handles discovery, prompting, backups, SCP, and TOML validation:
 
