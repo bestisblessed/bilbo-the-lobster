@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tutor"
+  short_description: "Learn codebases through local tutorials"
+  default_prompt: "Use $tutor to teach me one useful concept from this codebase and propose the next three tutorial topics."

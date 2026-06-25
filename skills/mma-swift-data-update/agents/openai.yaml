@@ -1,0 +1,3 @@
+display_name: MMA Swift Data Update
+short_description: Refresh MMA Swift data and restart backend.
+default_prompt: Update mma-ai-swift-app data locally, pull it on DonPablo, restart the backend, and verify status.
