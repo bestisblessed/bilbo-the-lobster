@@ -49,7 +49,7 @@ Also use this skill for these global Codex config files and user extension direc
 
 ## Script
 
-Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Codex`, `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills on both machines:
+Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Dev/Codex`, `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills on both machines:
 
 ```bash
 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
@@ -214,6 +214,7 @@ For receive direction, reverse the `scp` source and destination and back up the 
 
 - Local code root: `~/Code`
 - Remote code root: `/Users/pablo/Code`
+- Remote Codex workspace root: `/Users/pablo/Documents/Dev/Codex` (`REMOTE_CODEX_WORKSPACE_ROOT` overrides this for `diff_codex_configs.sh`)
 - Remote target for DonPablo: `pablo@DonPabloMBP.local`
 - Environment destination backups: `environment.toml.bak-YYYYmmdd-HHMMSS`
 - Global config destination backups: `<filename>.bak-YYYYmmdd-HHMMSS`

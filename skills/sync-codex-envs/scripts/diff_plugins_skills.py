@@ -175,12 +175,6 @@ def print_mcp_presence_diff(title: str, local_items: dict[str, str], remote_item
 
 def main() -> int:
     args = parse_args()
-    remote_home = run_remote(args.remote, 'printf %s "$HOME"')
-
-    print(f"Comparing installed Codex plugins, MCPs, and skills")
-    print(f"Local:  {Path.home()}")
-    print(f"Remote: {args.remote}:{remote_home}")
-    print()
 
     local_config = local_config_text()
     remote_config = remote_config_text(args.remote)

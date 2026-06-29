@@ -1,37 +1,57 @@
 ---
 name: simplify
-description: "Refactor code for clarity, consistency, and maintainability without changing behavior. Use when the user types /simplify or asks to simplify code."
-metadata: {"openclaw": {"emoji": "🧹", "user-invocable": true, "homepage": "https://x.com/bcherny/status/2027534984534544489?s=20"}}
+description: Simplify and refine existing code for clarity, consistency, and maintainability while preserving exact functionality. Use when the user asks to simplify, clean up, reduce complexity, remove redundancy, or make code easier to read without changing behavior. Default to recently modified code, but also use this skill when the user names specific files, modules, or diffs to simplify.
 ---
 
-# Simplify Code
+# Simplify
 
-Refactor code to make it easier to read, simpler to maintain, and more consistent with the surrounding codebase without changing what it does.
+## Overview
 
-Invoke this skill with `/simplify`.
+Simplify code with the smallest safe edit set. Preserve exact behavior, align with project conventions, and focus on code that was just changed unless the user specifies another scope.
 
-## Purpose
+## Choose Scope
 
-Use this skill when a user wants cleaner code, a more direct implementation, or a readability pass that preserves exact functionality.
+- If the user names files or directories, use that scope.
+- Otherwise inspect recent changes first with `git diff`, `git status`, or the task context and simplify the touched code.
+- If the recent diff is broad, narrow the work to the most obviously improvable code rather than refactoring unrelated areas.
 
-## Working Principles
+## Simplify Safely
 
-**Preserve functionality.** Never change behavior, outputs, side effects, or public interfaces unless the user explicitly asks for that.
+Apply these rules in order:
 
-**Apply project standards.** Match the existing conventions, patterns, naming style, and architectural expectations of the codebase.
+1. Preserve functionality exactly. Do not change outputs, side effects, public interfaces, control flow semantics, data shape, error behavior, timing assumptions, or tests unless the existing code is already incorrect and the user asked for a fix.
+2. Apply project standards already present in the codebase. Match naming, formatting, abstractions, and framework patterns instead of introducing a personal style.
+3. Reduce unnecessary complexity. Flatten avoidable nesting, collapse redundant conditionals, inline one-off variables when that improves readability, and remove dead or duplicate paths.
+4. Prefer fewer moving parts. Delete unhelpful abstractions, helper layers, and temporary variables unless they materially improve reuse or comprehension.
+5. Improve readability. Use clearer names, group related logic, and make the main path easy to scan.
+6. Keep changes minimal. Do not broaden the refactor once the target code is clear and improved.
 
-**Reduce unnecessary complexity.** Flatten avoidable nesting, remove redundant abstractions, and prefer the most direct implementation that remains clear.
+## Preferred Edits
 
-**Keep variables intentional.** Avoid introducing extra state unless it materially improves readability or is reused enough to justify it.
+- Replace branching pyramids with guard clauses when the project already uses them.
+- Merge duplicated logic that differs only trivially.
+- Remove needless wrappers and pass-through helpers.
+- Replace overly clever expressions with straightforward code.
+- Consolidate related code that is split across tiny helpers only used once.
+- Keep or add brief comments only when the intent is non-obvious after simplification.
 
-**Improve naming and structure.** Prefer clear variable and function names, and group related logic so the code reads in a straightforward way.
+## Avoid
 
-## Default Scope
+- Do not rename widely used public APIs just for style.
+- Do not move code across files unless that is the smallest clear simplification.
+- Do not introduce new abstractions to "future-proof" the code.
+- Do not change formatting-only details unrelated to the simplification target.
+- Do not mix bug fixes or feature work into the simplification pass unless the user asked for that separately.
 
-Focus on recently modified code unless the user points to a different file, module, or diff.
+## Verification
 
-## Reference
+- Run the most relevant existing tests or checks for the affected code after editing.
+- Confirm the results match expectations and inspect the changed code to verify behavior was not altered.
+- In the final response, state what was simplified, what was tested, and any remaining risk if test coverage was limited.
 
-Inspired by the new Claude Code `/simplify` command:
+## Example Triggers
 
-https://x.com/bcherny/status/2027534984534544489?s=20
+- "Use $simplify on the code we just changed."
+- "Simplify this component without changing behavior."
+- "Clean up `server/auth.py` but keep functionality identical."
+- "Reduce the nesting in this handler and remove redundancy."

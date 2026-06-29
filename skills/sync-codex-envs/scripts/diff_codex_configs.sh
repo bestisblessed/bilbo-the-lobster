@@ -4,6 +4,7 @@ set -euo pipefail
 remote="${1:-pablo@DonPabloMBP.local}"
 local_code_root="${LOCAL_CODE_ROOT:-$HOME/Code}"
 remote_code_root="${REMOTE_CODE_ROOT:-/Users/pablo/Code}"
+remote_workspace_root="${REMOTE_CODEX_WORKSPACE_ROOT:-/Users/pablo/Documents/Dev/Codex}"
 
 env_rel=".codex/environments/environment.toml"
 global_files=("AGENTS.md" "keybindings.json")
@@ -13,6 +14,7 @@ trap 'rm -rf "$tmp_dir"' EXIT
 
 local_repos="$tmp_dir/local-repos.txt"
 remote_repos="$tmp_dir/remote-repos.txt"
+remote_workspace_repos="$tmp_dir/remote-workspace-repos.txt"
 all_repos="$tmp_dir/all-repos.txt"
 remote_home="$(ssh -n "$remote" 'printf %s "$HOME"')"
 
@@ -23,6 +25,10 @@ find "$local_code_root" -maxdepth 4 -path "*/$env_rel" -print \
 ssh -n "$remote" "find '$remote_code_root' -maxdepth 4 -path '*/$env_rel' -print" \
   | sed "s#^$remote_code_root/##; s#/$env_rel\$##" \
   | sort > "$remote_repos"
+
+ssh -n "$remote" "if [ -d '$remote_workspace_root' ]; then find '$remote_workspace_root' -maxdepth 6 -path '*/$env_rel' -print; fi" \
+  | sed "s#^$remote_workspace_root/##; s#/$env_rel\$##" \
+  | sort > "$remote_workspace_repos"
 
 sort -u "$local_repos" "$remote_repos" > "$all_repos"
 
@@ -74,6 +80,16 @@ while IFS= read -r repo; do
     "$remote_code_root/$repo/$env_rel"
 done < "$all_repos"
 
+printf '\nComparing remote Codex workspace TOMLs under %s:%s\n\n' "$remote" "$remote_workspace_root"
+
+while IFS= read -r repo; do
+  [[ -n "$repo" ]] || continue
+  print_diff \
+    "remote-workspace/$repo/$env_rel" \
+    "$local_code_root/$repo/$env_rel" \
+    "$remote_workspace_root/$repo/$env_rel"
+done < "$remote_workspace_repos"
+
 printf '\nComparing global Codex config files\n\n'
 
 for file in "${global_files[@]}"; do
@@ -83,6 +99,6 @@ for file in "${global_files[@]}"; do
     "$remote_home/.codex/$file"
 done
 
-printf '\nComparing installed plugins, MCPs, and user skills\n\n'
+printf '\n'
 
 python3 "$(dirname "$0")/diff_plugins_skills.py" "$remote"

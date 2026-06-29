@@ -1,0 +1,4 @@
+interface:
+  display_name: "Threads Summarize"
+  short_description: "Summarize selected Codex threads into SUMMARY.md"
+  default_prompt: "Use $threads-summarize to summarize selected Codex session ids into SUMMARY.md for this project."

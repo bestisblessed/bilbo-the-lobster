@@ -1,0 +1,4 @@
+interface:
+  display_name: "Control TV Remote"
+  short_description: "Control UniversalRemote from TV prompts"
+  default_prompt: "Use $control-tv-remote to pause the living room TV."

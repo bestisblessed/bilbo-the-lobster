@@ -1,0 +1,4 @@
+interface:
+  display_name: "iOSPushUpdate"
+  short_description: "Archive and submit the iOS app."
+  default_prompt: "Use $ios-push-update to archive the MMA AI iOS app, upload the build, complete App Store Connect metadata, and submit for review."
