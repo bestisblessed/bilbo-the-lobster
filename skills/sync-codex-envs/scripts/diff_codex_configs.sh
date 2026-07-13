@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-remote="${1:-pablo@DonPabloMBP.local}"
+remote="${1:-donpablo}"
+remote_home="$(ssh -n "$remote" 'printf %s "$HOME"')"
 local_code_root="${LOCAL_CODE_ROOT:-$HOME/Code}"
-remote_code_root="${REMOTE_CODE_ROOT:-/Users/pablo/Code}"
-remote_workspace_root="${REMOTE_CODEX_WORKSPACE_ROOT:-/Users/pablo/Documents/Dev/Codex}"
+remote_code_root="${REMOTE_CODE_ROOT:-$remote_home/Code}"
+remote_workspace_root="${REMOTE_CODEX_WORKSPACE_ROOT:-$remote_home/Documents/Codex}"
 
 env_rel=".codex/environments/environment.toml"
 global_files=("AGENTS.md" "keybindings.json")
@@ -16,7 +17,6 @@ local_repos="$tmp_dir/local-repos.txt"
 remote_repos="$tmp_dir/remote-repos.txt"
 remote_workspace_repos="$tmp_dir/remote-workspace-repos.txt"
 all_repos="$tmp_dir/all-repos.txt"
-remote_home="$(ssh -n "$remote" 'printf %s "$HOME"')"
 
 find "$local_code_root" -maxdepth 4 -path "*/$env_rel" -print \
   | sed "s#^$local_code_root/##; s#/$env_rel\$##" \

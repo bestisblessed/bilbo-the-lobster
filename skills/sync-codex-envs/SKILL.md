@@ -31,7 +31,7 @@ Also use this skill for these global Codex config files and user extension direc
 1. Determine the direction for each repo:
    - `send`: copy local TOMLs to the remote machine.
    - `receive`: copy remote TOMLs to this machine.
-2. Determine the remote SSH target. Default to `pablo@DonPabloMBP.local` when the user says DonPablo and gives no other host.
+2. Determine the remote SSH target. Default to `donpablo` when the user says DonPablo and gives no other host.
 3. Determine repo names. If missing, ask which local repos to sync after discovering repos under `~/Code`.
 4. For repo environment TOMLs, run `scripts/sync_env_tomls.py` with the chosen direction, remote, and repos. Use `--send-repo` and `--receive-repo` when one run needs mixed directions.
 5. For global config files, use direct `ssh` and `scp` commands with a timestamped backup first.
@@ -49,7 +49,7 @@ Also use this skill for these global Codex config files and user extension direc
 
 ## Script
 
-Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `/Users/pablo/Code`, remote Codex workspace TOMLs under `/Users/pablo/Documents/Dev/Codex`, `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills on both machines:
+Use this read-only diff helper first by default. It compares repo environment TOMLs under `~/Code`, remote repo TOMLs under `<remote $HOME>/Code`, remote Codex workspace TOMLs under `<remote $HOME>/Documents/Codex`, `~/.codex/AGENTS.md`, `~/.codex/keybindings.json`, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills on both machines:
 
 ```bash
 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
@@ -58,7 +58,7 @@ Use this read-only diff helper first by default. It compares repo environment TO
 Optional target override:
 
 ```bash
-/Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh pablo@DonPabloMBP.local
+/Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh donpablo
 ```
 
 After printing the diff, ask the user what to sync, if anything.
@@ -66,7 +66,7 @@ After printing the diff, ask the user what to sync, if anything.
 To compare only installed plugins, MCP entries, and user skills without checking environment TOMLs or global config files, run:
 
 ```bash
-python3 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_plugins_skills.py pablo@DonPabloMBP.local
+python3 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_plugins_skills.py donpablo
 ```
 
 This is read-only. It prints plugin entries, standalone MCP server presence, plugin MCP override presence from `~/.codex/config.toml`, and user skill directories from `~/.codex/skills` and `~/.agents/skills`, excluding Codex-managed `~/.codex/skills/.system`. MCP entries are presence-only: when the same MCP name exists on both machines, the helper does not report config or version differences.
@@ -108,20 +108,20 @@ PY
 Remote plugin status edit pattern:
 
 ```bash
-ssh pablo@DonPabloMBP.local 'cp ~/.codex/config.toml ~/.codex/config.toml.bak-$(date +%Y%m%d-%H%M%S)'
-ssh pablo@DonPabloMBP.local 'zsh -lc "command -v codex && codex plugin --help"'
+ssh donpablo 'cp ~/.codex/config.toml ~/.codex/config.toml.bak-$(date +%Y%m%d-%H%M%S)'
+ssh donpablo 'zsh -lc "command -v codex && codex plugin --help"'
 ```
 
 If the remote `codex` command is unavailable in SSH, patch `~/.codex/config.toml` directly on the remote, copy it back or print it, validate it with local `python3`/`tomllib` when needed, and rerun:
 
 ```bash
-/Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh pablo@DonPabloMBP.local
+/Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh donpablo
 ```
 
 For user skills, sync only explicit user-approved directories:
 
 ```bash
-scp -r ~/.codex/skills/sync-codex-envs pablo@DonPabloMBP.local:~/.codex/skills/
+scp -r ~/.codex/skills/sync-codex-envs donpablo:~/.codex/skills/
 ```
 
 Back up an existing destination skill directory before overwriting it. Do not copy `~/.codex/skills/.system`.
@@ -159,7 +159,7 @@ For stdio servers, include the command after `--`; for HTTP servers, use `--url`
 Remote MCP status pattern:
 
 ```bash
-ssh pablo@DonPabloMBP.local 'zsh -lc "command -v codex && codex mcp list"'
+ssh donpablo 'zsh -lc "command -v codex && codex mcp list"'
 ```
 
 If `codex mcp` is unavailable over SSH, back up `~/.codex/config.toml`, edit only the requested `[mcp_servers.<name>]` or plugin MCP override table, validate TOML, and rerun the read-only diff helper. The helper intentionally reports only `[only-local]` and `[only-remote]` MCP entries; it does not report `[different-config]` for same-name MCPs because paths, app versions, tokens, and runtime locations can legitimately differ by host. Do not print or copy MCP secrets unless the user explicitly asks to sync that named secret-bearing entry.
@@ -173,23 +173,23 @@ python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py
 Common non-interactive forms:
 
 ```bash
-python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote pablo@DonPabloMBP.local --repo mma-ai-swift-app --repo odds-monitoring
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote donpablo --repo mma-ai-swift-app --repo odds-monitoring
 ```
 
 ```bash
-python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction receive --remote pablo@DonPabloMBP.local --repo mma-ai-swift-app --repo odds-monitoring
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction receive --remote donpablo --repo mma-ai-swift-app --repo odds-monitoring
 ```
 
 Mixed directions in one run:
 
 ```bash
-python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --remote pablo@DonPabloMBP.local --send-repo mma-ai-swift-app --send-repo the-fight-predictor-agent --receive-repo mma-ai
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --remote donpablo --send-repo mma-ai-swift-app --send-repo the-fight-predictor-agent --receive-repo mma-ai
 ```
 
 Use `--dry-run` before live copies when checking paths:
 
 ```bash
-python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote pablo@DonPabloMBP.local --repo all --dry-run
+python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direction send --remote donpablo --repo all --dry-run
 ```
 
 ## Global Config Files
@@ -197,15 +197,15 @@ python /Users/td/.codex/skills/sync-codex-envs/scripts/sync_env_tomls.py --direc
 For shell-only global config syncs, default to these commands when sending local config to DonPablo. Do not create `~/.codex` unless the user asks; this workflow assumes Codex already exists on the remote.
 
 ```bash
-ssh pablo@DonPabloMBP.local 'if [ -f ~/.codex/AGENTS.md ]; then cp ~/.codex/AGENTS.md ~/.codex/AGENTS.md.bak-$(date +%Y%m%d-%H%M%S); fi'
-scp ~/.codex/AGENTS.md pablo@DonPabloMBP.local:~/.codex/AGENTS.md
-ssh pablo@DonPabloMBP.local 'ls -l ~/.codex/AGENTS.md && sed -n "1,220p" ~/.codex/AGENTS.md'
+ssh donpablo 'if [ -f ~/.codex/AGENTS.md ]; then cp ~/.codex/AGENTS.md ~/.codex/AGENTS.md.bak-$(date +%Y%m%d-%H%M%S); fi'
+scp ~/.codex/AGENTS.md donpablo:~/.codex/AGENTS.md
+ssh donpablo 'ls -l ~/.codex/AGENTS.md && sed -n "1,220p" ~/.codex/AGENTS.md'
 ```
 
 ```bash
-ssh pablo@DonPabloMBP.local 'if [ -f ~/.codex/keybindings.json ]; then cp ~/.codex/keybindings.json ~/.codex/keybindings.json.bak-$(date +%Y%m%d-%H%M%S); fi'
-scp ~/.codex/keybindings.json pablo@DonPabloMBP.local:~/.codex/keybindings.json
-ssh pablo@DonPabloMBP.local 'ls -l ~/.codex/keybindings.json && sed -n "1,220p" ~/.codex/keybindings.json'
+ssh donpablo 'if [ -f ~/.codex/keybindings.json ]; then cp ~/.codex/keybindings.json ~/.codex/keybindings.json.bak-$(date +%Y%m%d-%H%M%S); fi'
+scp ~/.codex/keybindings.json donpablo:~/.codex/keybindings.json
+ssh donpablo 'ls -l ~/.codex/keybindings.json && sed -n "1,220p" ~/.codex/keybindings.json'
 ```
 
 For receive direction, reverse the `scp` source and destination and back up the local destination before overwriting.
@@ -213,9 +213,9 @@ For receive direction, reverse the `scp` source and destination and back up the 
 ## Defaults
 
 - Local code root: `~/Code`
-- Remote code root: `/Users/pablo/Code`
-- Remote Codex workspace root: `/Users/pablo/Documents/Dev/Codex` (`REMOTE_CODEX_WORKSPACE_ROOT` overrides this for `diff_codex_configs.sh`)
-- Remote target for DonPablo: `pablo@DonPabloMBP.local`
+- Remote code root: `<remote $HOME>/Code`
+- Remote Codex workspace root: `<remote $HOME>/Documents/Codex` (`REMOTE_CODEX_WORKSPACE_ROOT` overrides this for `diff_codex_configs.sh`)
+- Remote target for DonPablo: `donpablo`
 - Environment destination backups: `environment.toml.bak-YYYYmmdd-HHMMSS`
 - Global config destination backups: `<filename>.bak-YYYYmmdd-HHMMSS`
 

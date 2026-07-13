@@ -16,8 +16,8 @@ from pathlib import Path
 
 ENV_REL = Path(".codex/environments/environment.toml")
 DEFAULT_LOCAL_CODE_ROOT = Path("~/Code").expanduser()
-DEFAULT_REMOTE = "pablo@DonPabloMBP.local"
-DEFAULT_REMOTE_CODE_ROOT = "/Users/pablo/Code"
+DEFAULT_REMOTE = "donpablo"
+DEFAULT_REMOTE_CODE_ROOT = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--direction", choices=("send", "receive"), help="send local files to remote, or receive remote files")
     parser.add_argument("--remote", help=f"SSH target, default {DEFAULT_REMOTE}")
-    parser.add_argument("--remote-code-root", default=DEFAULT_REMOTE_CODE_ROOT, help=f"Remote Code directory, default {DEFAULT_REMOTE_CODE_ROOT}")
+    parser.add_argument("--remote-code-root", default=DEFAULT_REMOTE_CODE_ROOT, help="Remote Code directory, default <remote $HOME>/Code")
     parser.add_argument("--local-code-root", type=Path, default=DEFAULT_LOCAL_CODE_ROOT, help=f"Local Code directory, default {DEFAULT_LOCAL_CODE_ROOT}")
     parser.add_argument("--repo", action="append", help="Repo name/path to sync. Repeat, comma-separate, or use 'all'.")
     parser.add_argument("--send-repo", action="append", help="Repo to send from this Mac to remote. Repeat or comma-separate.")
@@ -78,8 +78,15 @@ def prompt_direction(direction: str | None) -> str:
 def prompt_remote(remote: str | None) -> str:
     if remote:
         return remote
-    answer = input(f"Remote SSH target [{DEFAULT_REMOTE}]: ").strip()
+    try:
+        answer = input(f"Remote SSH target [{DEFAULT_REMOTE}]: ").strip()
+    except EOFError:
+        return DEFAULT_REMOTE
     return answer or DEFAULT_REMOTE
+
+
+def get_remote_home(remote: str) -> str:
+    return subprocess.check_output(["ssh", remote, 'printf %s "$HOME"'], text=True).strip()
 
 
 def prompt_repos(repos: list[str], discovered: list[str]) -> list[str]:
@@ -194,6 +201,8 @@ def main() -> int:
     args = parse_args()
     args.local_code_root = args.local_code_root.expanduser()
     remote = prompt_remote(args.remote)
+    if args.remote_code_root is None:
+        args.remote_code_root = f"{get_remote_home(remote)}/Code"
     discovered = discover_repos(args.local_code_root)
     operations = build_operations(args, discovered)
     confirm(args, remote, operations)
