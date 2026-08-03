@@ -67,7 +67,7 @@ def codex_home_from_args(value: str | None) -> Path:
 
 
 def documents_backup_root() -> Path:
-    docs = Path.home() / "Documents" / "Dev" / "Codex" / "codex-backups"
+    docs = Path.home() / "Documents" / "Codex" / "codex-backups"
     if docs.parent.exists() or platform.system() == "Windows":
         return docs
     return Path.home() / ".codex" / "backups"

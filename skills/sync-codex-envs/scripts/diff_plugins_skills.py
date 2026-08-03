@@ -84,7 +84,7 @@ def local_skills() -> set[str]:
         if not root.is_dir():
             continue
         for path in sorted(root.glob("*/SKILL.md")):
-            if label == "codex" and path.parent.name == ".system":
+            if label == "codex" and path.parent.name in {".system", "sync-codex-envs"}:
                 continue
             items.add(f"{label}:{path.parent.name}")
     return items
@@ -104,7 +104,7 @@ for root in "$HOME/.codex/skills" "$HOME/.agents/skills"; do
     find "$root" -mindepth 2 -maxdepth 2 -name SKILL.md -print | while IFS= read -r skill; do
       name="${skill%/SKILL.md}"
       name="${name##*/}"
-      if [ "$label" = "codex" ] && [ "$name" = ".system" ]; then
+      if [ "$label" = "codex" ] && { [ "$name" = ".system" ] || [ "$name" = "sync-codex-envs" ]; }; then
         continue
       fi
       printf '%s:%s\n' "$label" "$name"

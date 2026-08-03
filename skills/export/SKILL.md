@@ -1,6 +1,6 @@
 ---
 name: export
-description: Export a Codex session JSONL from ~/.codex/sessions into a clean Markdown transcript in ~/Documents/Dev/Codex/Exports. Use when the user wants to export, save, or convert the current Codex conversation or another conversation by session id.
+description: Export a Codex session JSONL from ~/.codex/sessions into a clean Markdown transcript in ~/Documents/Codex/Exports. Use when the user wants to export, save, or convert the current Codex conversation or another conversation by session id.
 ---
 
 # Export Conversation
@@ -17,8 +17,8 @@ scripts/export_conversation.py 019dc927-dac9-7f23-b313-917d776d189e
 
 The script reads from `~/.codex/sessions` and writes:
 
-`~/Documents/Dev/Codex/Exports/<session-id>.md`
+`~/Documents/Codex/Exports/<session-id>.md`
 
 Print the saved path after running it.
 
-The script creates `~/Documents/Dev/Codex/Exports` if it does not already exist.
+The script creates `~/Documents/Codex/Exports` if it does not already exist.

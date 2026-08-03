@@ -7,7 +7,7 @@ from pathlib import Path
 
 session_id = sys.argv[1] if len(sys.argv) > 1 else os.environ["CODEX_THREAD_ID"]
 matches = sorted(Path("~/.codex/sessions").expanduser().glob(f"*/*/*/*{session_id}*"))
-export_dir = Path("~/Documents/Dev/Codex/Exports").expanduser()
+export_dir = Path("~/Documents/Codex/Exports").expanduser()
 
 if not matches:
     raise SystemExit(1)

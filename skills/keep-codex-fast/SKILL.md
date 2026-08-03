@@ -78,7 +78,7 @@ If the user wants automation and the Codex app automation tool is available, cre
 
 ## What Apply Does
 
-- Backs up important metadata to `~/Documents/Dev/Codex/codex-backups/keep-codex-fast-*`.
+- Backs up important metadata to `~/Documents/Codex/codex-backups/keep-codex-fast-*`.
 - Archives old non-pinned sessions to `~/.codex/archived_sessions/`.
 - Normalizes Windows extended paths like `\\?\C:\...` inside local SQLite text fields.
 - Prunes missing/temp project blocks from `config.toml` and writes UTF-8 without BOM.
