@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add Sidebar Favorite"
+  short_description: "Inventory and add Finder sidebar favorites"
+  default_prompt: "Use $add-sidebar-favorite to list my configured favorites and add a directory to Finder's sidebar with a confirmed macOS icon."
