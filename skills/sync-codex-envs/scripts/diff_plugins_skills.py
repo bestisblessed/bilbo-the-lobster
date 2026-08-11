@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print read-only differences in installed Codex plugins, MCPs, and user skills."""
+"""Print read-only differences in Codex global config, plugins, MCPs, and skills."""
 
 from __future__ import annotations
 
@@ -11,6 +11,15 @@ from pathlib import Path
 
 
 DEFAULT_REMOTE = "pablo@DonPabloMBP.local"
+
+# Keep the stable, user-facing global controls; exclude desktop/UI state,
+# trusted directories, project state, marketplaces, and machine-local paths.
+MAJOR_GLOBAL_KEYS = {
+    "model", "model_reasoning_effort", "sandbox_mode", "approval_policy",
+    "web_search", "approvals_reviewer", "service_tier", "notify",
+}
+MAJOR_GLOBAL_TABLES = {"sandbox_workspace_write"}
+SENSITIVE_WORDS = ("token", "secret", "password", "api_key", "apikey", "authorization")
 
 
 def parse_args() -> argparse.Namespace:
@@ -35,6 +44,44 @@ def parse_plugins(config_text: str) -> dict[str, str]:
         if isinstance(config, dict):
             enabled = config.get("enabled")
             result[name] = "enabled" if enabled is True else "disabled"
+    return result
+
+
+def _safe_value(key: str, value: object) -> object:
+    if any(word in key.lower() for word in SENSITIVE_WORDS):
+        return "<redacted>"
+    if isinstance(value, dict):
+        return {str(k): _safe_value(str(k), v) for k, v in sorted(value.items())}
+    if isinstance(value, list):
+        return [_safe_value(key, item) for item in value]
+    return value
+
+
+def parse_major_global_config(config_text: str) -> dict[str, object]:
+    if not config_text.strip():
+        return {}
+    data = tomllib.loads(config_text)
+    result = {key: _safe_value(key, data[key]) for key in sorted(MAJOR_GLOBAL_KEYS) if key in data}
+    for table in sorted(MAJOR_GLOBAL_TABLES):
+        if isinstance(data.get(table), dict):
+            result[table] = _safe_value(table, data[table])
+    return result
+
+
+def parse_skill_config(config_text: str) -> dict[str, object]:
+    if not config_text.strip():
+        return {}
+    data = tomllib.loads(config_text)
+    skills = data.get("skills", {})
+    configured = skills.get("config") if isinstance(skills, dict) else None
+    if not isinstance(configured, list):
+        return {}
+    result = {}
+    for item in configured:
+        if not isinstance(item, dict) or "path" not in item:
+            continue
+        path = str(item["path"])
+        result[path] = {key: _safe_value(key, value) for key, value in sorted(item.items()) if key != "path"}
     return result
 
 
@@ -154,6 +201,24 @@ def print_plugin_diff(local_plugins: dict[str, str], remote_plugins: dict[str, s
     print()
 
 
+def print_config_diff(title: str, local_items: dict[str, object], remote_items: dict[str, object]) -> None:
+    print(title)
+    if local_items == remote_items:
+        print("[same] no differences")
+        print()
+        return
+    print("| Setting / entry | Local | Remote | Status |")
+    print("|---|---|---|---|")
+    for key in sorted(set(local_items) | set(remote_items)):
+        if key not in local_items:
+            print(f"| `{key}` | — | `{remote_items[key]!r}` | only remote |")
+        elif key not in remote_items:
+            print(f"| `{key}` | `{local_items[key]!r}` | — | only local |")
+        elif local_items[key] != remote_items[key]:
+            print(f"| `{key}` | `{local_items[key]!r}` | `{remote_items[key]!r}` | different |")
+    print()
+
+
 def print_mcp_presence_diff(title: str, local_items: dict[str, str], remote_items: dict[str, str]) -> None:
     print(title)
     local_names = set(local_items)
@@ -178,6 +243,17 @@ def main() -> int:
 
     local_config = local_config_text()
     remote_config = remote_config_text(args.remote)
+
+    print_config_diff(
+        "Major global settings from ~/.codex/config.toml",
+        parse_major_global_config(local_config),
+        parse_major_global_config(remote_config),
+    )
+    print_config_diff(
+        "Configured skill entries from ~/.codex/config.toml",
+        parse_skill_config(local_config),
+        parse_skill_config(remote_config),
+    )
 
     local_plugins = parse_plugins(local_config)
     remote_plugins = parse_plugins(remote_config)
