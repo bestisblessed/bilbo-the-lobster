@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 import tomllib
@@ -11,6 +12,7 @@ from pathlib import Path
 
 
 DEFAULT_REMOTE = "pablo@DonPabloMBP.local"
+EXPECTED_LOCAL_ONLY_SKILLS = {"add-sidebar-favorite"}
 
 # Keep the stable, user-facing global controls; exclude desktop/UI state,
 # trusted directories, project state, marketplaces, and machine-local paths.
@@ -20,6 +22,7 @@ MAJOR_GLOBAL_KEYS = {
 }
 MAJOR_GLOBAL_TABLES = {"sandbox_workspace_write"}
 SENSITIVE_WORDS = ("token", "secret", "password", "api_key", "apikey", "authorization")
+USER_PATH_RE = re.compile(r"/Users/[^/]+/")
 
 
 def parse_args() -> argparse.Namespace:
@@ -54,6 +57,8 @@ def _safe_value(key: str, value: object) -> object:
         return {str(k): _safe_value(str(k), v) for k, v in sorted(value.items())}
     if isinstance(value, list):
         return [_safe_value(key, item) for item in value]
+    if isinstance(value, str):
+        return USER_PATH_RE.sub("/Users/<user>/", value)
     return value
 
 
@@ -131,7 +136,7 @@ def local_skills() -> set[str]:
         if not root.is_dir():
             continue
         for path in sorted(root.glob("*/SKILL.md")):
-            if label == "codex" and path.parent.name in {".system", "sync-codex-envs"}:
+            if label == "codex" and path.parent.name in {".system", "sync-codex-envs", *EXPECTED_LOCAL_ONLY_SKILLS}:
                 continue
             items.add(f"{label}:{path.parent.name}")
     return items
@@ -151,7 +156,7 @@ for root in "$HOME/.codex/skills" "$HOME/.agents/skills"; do
     find "$root" -mindepth 2 -maxdepth 2 -name SKILL.md -print | while IFS= read -r skill; do
       name="${skill%/SKILL.md}"
       name="${name##*/}"
-      if [ "$label" = "codex" ] && { [ "$name" = ".system" ] || [ "$name" = "sync-codex-envs" ]; }; then
+      if [ "$label" = "codex" ] && { [ "$name" = ".system" ] || [ "$name" = "sync-codex-envs" ] || [ "$name" = "add-sidebar-favorite" ]; }; then
         continue
       fi
       printf '%s:%s\n' "$label" "$name"

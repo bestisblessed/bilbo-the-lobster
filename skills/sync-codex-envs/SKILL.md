@@ -27,7 +27,7 @@ Also use this skill for these global Codex config files and user extension direc
    ```bash
    /Users/td/.codex/skills/sync-codex-envs/scripts/diff_codex_configs.sh
    ```
-   This includes repo environment TOMLs, global Codex config files, major global settings from `~/.codex/config.toml`, configured skill entries, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills. It intentionally excludes trusted directories and other host-local path settings. Always present every detected difference in a formatted Markdown table or clearly labeled bullet list, with local and remote values where applicable. Then ask the user how they want to proceed. Do not send or receive files until the user chooses a direction and scope.
+   This includes repo environment TOMLs, global Codex config files, major global settings from `~/.codex/config.toml`, configured skill entries, installed plugin config entries, standalone MCP server presence, plugin MCP override presence, and user-installed skills. It intentionally excludes trusted directories, other host-local path settings, and the explicitly local-only `add-sidebar-favorite` skill. Always present every detected difference in a formatted Markdown table or clearly labeled bullet list, with local and remote values where applicable. Then ask the user how they want to proceed. Do not send or receive files until the user chooses a direction and scope.
 1. Determine the direction for each repo:
    - `send`: copy local TOMLs to the remote machine.
    - `receive`: copy remote TOMLs to this machine.
@@ -45,8 +45,8 @@ Also use this skill for these global Codex config files and user extension direc
    - Plugin MCP overrides live under nested plugin tables such as `[plugins."name@marketplace".mcp_servers.<server>...]`.
    - Use `codex mcp add`, `codex mcp remove`, `codex mcp list`, and `codex mcp get` when available. If CLI commands are unavailable over SSH, edit only the requested TOML table(s) after backing up the destination config.
    - Treat MCP `env`, `http_headers`, bearer token env vars, API keys, and machine-specific paths as sensitive or host-specific. The diff helper intentionally checks MCP presence only and does not compare or print config fingerprints for same-name MCPs.
-8. For user skill differences, copy only user-approved skill directories under `~/.codex/skills` or `~/.agents/skills`; never copy managed `~/.codex/skills/.system` or report the expected local-only `~/.codex/skills/sync-codex-envs` skill.
-9. For global `config.toml` differences, show every exact major setting or configured skill entry in a formatted table or bullet list and ask which changes, if any, the user wants synced. Never automatically sync trusted directories, machine-local paths, or secrets. MCP comparisons may report presence and safe non-secret config differences, but do not print or copy API keys, bearer tokens, passwords, or similar secrets.
+8. For user skill differences, copy only user-approved skill directories under `~/.codex/skills` or `~/.agents/skills`; never copy managed `~/.codex/skills/.system`, report the expected local-only `~/.codex/skills/sync-codex-envs` skill, or report the explicitly local-only `add-sidebar-favorite` skill.
+9. For global `config.toml` differences, show every exact major setting or configured skill entry in a formatted table or bullet list and ask which changes, if any, the user wants synced. Normalize obvious machine-specific username paths such as `/Users/<name>/...` before comparison so equivalent cross-machine values are not reported as differences. Never automatically sync trusted directories, machine-local paths, or secrets. MCP comparisons may report presence and safe non-secret config differences, but do not print or copy API keys, bearer tokens, passwords, or similar secrets.
 10. Verify the output: the script validates TOML before overwriting, backs up destinations, and prints every copied path; direct global config sync should list and print the copied remote file. Plugin, MCP, global-setting, and skill-config edits must be validated as TOML on both sides and then verified by rerunning the read-only diff helper.
 
 ## Script
@@ -71,7 +71,7 @@ To compare only installed plugins, MCP entries, and user skills without checking
 python3 /Users/td/.codex/skills/sync-codex-envs/scripts/diff_plugins_skills.py donpablo
 ```
 
-This is read-only. It prints major global settings, configured skill entries, plugin entries, standalone MCP server presence, plugin MCP override presence from `~/.codex/config.toml`, and user skill directories from `~/.codex/skills` and `~/.agents/skills`, excluding Codex-managed `~/.codex/skills/.system`, the expected local-only `~/.codex/skills/sync-codex-envs` skill, trusted directories, and other host-local path settings. Secret-like values are redacted.
+This is read-only. It prints major global settings, configured skill entries, plugin entries, standalone MCP server presence, plugin MCP override presence from `~/.codex/config.toml`, and user skill directories from `~/.codex/skills` and `~/.agents/skills`, excluding Codex-managed `~/.codex/skills/.system`, the expected local-only `~/.codex/skills/sync-codex-envs` and `add-sidebar-favorite` skills, trusted directories, and other host-local path settings. Secret-like values are redacted.
 
 
 ## Plugin, MCP, And Skill Sync
